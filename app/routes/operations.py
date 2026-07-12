@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import (ActivityLog, Allocation, Asset, AssetCategory, AuditCycle, AuditItem,
     Booking, Department, MaintenanceRequest, TransferRequest, User, Notification,
-    ASSET_ALLOCATED, ASSET_AVAILABLE, ASSET_LOST, ASSET_MAINTENANCE, ASSET_STATUSES)
+    ASSET_ALLOCATED, ASSET_AVAILABLE, ASSET_LOST, ASSET_MAINTENANCE, ASSET_STATUSES, ROLES)
 
 operations_bp = Blueprint("operations", __name__)
 
@@ -198,3 +198,29 @@ def organization():
         else: db.session.add(model(name=name)); _record(f"Created {kind} {name}", model.__name__); db.session.commit(); flash(f"{kind.title()} created.", "success")
         return redirect(url_for("operations.organization"))
     return render_template("operations/organization.html", departments=Department.query.order_by(Department.name).all(), categories=AssetCategory.query.order_by(AssetCategory.name).all(), users=User.query.order_by(User.name).all())
+
+@operations_bp.route("/organization/users/<int:user_id>", methods=["POST"])
+@login_required
+def update_user(user_id):
+    if not current_user.is_admin: abort(403)
+    user = db.get_or_404(User, user_id)
+    role, status, department_id = request.form.get("role"), request.form.get("status"), request.form.get("department_id", type=int)
+    if role not in ROLES or status not in {"Active", "Inactive"}: abort(400)
+    if user.id == current_user.id and status == "Inactive":
+        flash("You cannot deactivate your own administrator account.", "error")
+    else:
+        user.role, user.status = role, status
+        user.department_id = department_id if db.session.get(Department, department_id) else None
+        _record(f"Updated employee access for {user.name}", "User")
+        db.session.commit(); flash("Employee role and access updated.", "success")
+    return redirect(url_for("operations.organization"))
+
+@operations_bp.route("/organization/departments/<int:department_id>/status", methods=["POST"])
+@login_required
+def department_status(department_id):
+    if not current_user.is_admin: abort(403)
+    department = db.get_or_404(Department, department_id)
+    department.status = "Inactive" if department.status == "Active" else "Active"
+    _record(f"Set department {department.name} to {department.status}", "Department")
+    db.session.commit(); flash("Department status updated.", "success")
+    return redirect(url_for("operations.organization"))
