@@ -27,6 +27,7 @@
         <a class="nav-link {{ 'active' if request.endpoint == 'operations.audits' }}" href="{{ url_for('operations.audits') }}">Audit Cycles</a>
         <a class="nav-link {{ 'active' if request.endpoint == 'operations.reports' }}" href="{{ url_for('operations.reports') }}">Reports</a>
         <a class="nav-link {{ 'active' if request.endpoint == 'operations.activity' }}" href="{{ url_for('operations.activity') }}">Activity Log</a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'operations.assistant' }}" href="{{ url_for('operations.assistant') }}">Insight Assistant</a>
 
         {% if current_user.is_authenticated and current_user.is_admin %}
         <div class="nav-group-label">Admin</div>
@@ -58,6 +59,14 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  <div class="chat-widget" id="chat-widget">
+    <section class="chat-popover" id="chat-popover" aria-hidden="true">
+      <header><div><strong>AssetFlow Assistant</strong><span>● Online</span></div><button id="chat-close" type="button" aria-label="Close chat">×</button></header>
+      <div class="chat-widget-feed" id="chat-widget-feed"><div class="chat-message assistant-message">Hi! Ask me about assets, bookings, maintenance, or reports.</div></div>
+      <form id="chat-widget-form"><input id="chat-widget-input" required placeholder="Ask a question…"><button class="btn btn-primary">Send</button></form>
+    </section>
+    <button class="chat-fab" id="chat-fab" type="button" aria-label="Open Insight Assistant"><span>✦</span><small>Ask AI</small></button>
+  </div>
   <script>
     (() => {
       const toggle = document.getElementById('theme-toggle');
@@ -70,6 +79,13 @@
         localStorage.setItem('assetflow-theme', document.documentElement.dataset.theme);
         updateLabel();
       });
+    })();
+    (() => {
+      const fab=document.getElementById('chat-fab'), popover=document.getElementById('chat-popover'), close=document.getElementById('chat-close'), form=document.getElementById('chat-widget-form'), input=document.getElementById('chat-widget-input'), feed=document.getElementById('chat-widget-feed');
+      if(!fab) return;
+      const toggle=(open)=>{popover.classList.toggle('open',open);popover.setAttribute('aria-hidden',String(!open)); if(open) input.focus();};
+      fab.onclick=()=>toggle(!popover.classList.contains('open')); close.onclick=()=>toggle(false);
+      form.onsubmit=async(e)=>{e.preventDefault();const question=input.value.trim();if(!question)return;const user=document.createElement('div');user.className='chat-message user-message';user.textContent=question;feed.appendChild(user);input.value='';const response=await fetch('{{url_for("operations.assistant")}}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});const data=await response.json();const reply=document.createElement('button');reply.type='button';reply.className='chat-message assistant-message';reply.textContent=data.answer||'Please try again.';reply.onclick=()=>speechSynthesis.speak(new SpeechSynthesisUtterance(reply.textContent));feed.appendChild(reply);feed.scrollTop=feed.scrollHeight;};
     })();
   </script>
 </body>

@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 import csv
 import io
 from sqlalchemy import or_
-from flask import Blueprint, abort, flash, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from app import db
 from app.models import (ActivityLog, Allocation, Asset, AssetCategory, AuditCycle, AuditItem,
@@ -208,6 +208,31 @@ def export_report():
 def activity():
     logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(100).all(); notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(20).all()
     return render_template("operations/list.html", title="Activity & notifications", description="A record of actions performed in AssetFlow.", headers=["When", "Who", "Action", "Entity"], rows=[(x.timestamp.strftime("%d %b %Y %H:%M"), x.user.name if x.user else "System", x.action, x.entity or "—") for x in logs], empty="No activity has been recorded yet.", notifications=notifications)
+
+@operations_bp.route("/assistant", methods=["GET", "POST"])
+@login_required
+def assistant():
+    if request.method == "POST":
+        data = request.get_json(silent=True) or request.form
+        language = data.get("language", "en")
+        if data.get("action") == "summarize":
+            text = " ".join((data.get("text") or "").split())
+            parts = [part.strip() for part in text.replace("!", ".").replace("?", ".").split(".") if part.strip()]
+            answer = "Summary: " + ". ".join(parts[:3]) + "." if parts else "Paste text first to create a summary."
+        else:
+            available = Asset.query.filter_by(status=ASSET_AVAILABLE).count()
+            allocated = Allocation.query.filter_by(status="Active").count()
+            maintenance = MaintenanceRequest.query.filter(MaintenanceRequest.status.in_(["Approved", "TechnicianAssigned", "InProgress"])).count()
+            bookings = Booking.query.filter(Booking.status.in_(["Upcoming", "Ongoing"])).count()
+            overdue = Allocation.query.filter(Allocation.status == "Active", Allocation.expected_return_date.isnot(None), Allocation.expected_return_date < datetime.utcnow().date()).count()
+            question = (data.get("question") or "").lower()
+            if language == "hi": answer = f"Live snapshot: {available} assets available, {allocated} allocated, {maintenance} maintenance mein, {bookings} active bookings aur {overdue} overdue returns hain."
+            elif "maintenance" in question: answer = f"There are {maintenance} active maintenance requests. Open Maintenance to approve, assign a technician, or resolve them."
+            elif "booking" in question: answer = f"There are {bookings} active or upcoming bookings. The booking screen prevents overlapping slots automatically."
+            elif "overdue" in question: answer = f"There are {overdue} overdue allocations. Review them in the Dashboard's Overdue Returns panel."
+            else: answer = f"Live snapshot: {available} available assets, {allocated} allocated assets, {maintenance} active maintenance requests, and {bookings} active bookings."
+        return jsonify({"answer": answer})
+    return render_template("operations/assistant.html")
 
 @operations_bp.route("/organization", methods=["GET", "POST"])
 @login_required
