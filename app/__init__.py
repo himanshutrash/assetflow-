@@ -32,18 +32,41 @@ def create_app():
     app.register_blueprint(dashboard_bp)
 
     with app.app_context():
+        # Debug Information
+        print("=" * 60)
+        print("Instance Path :", app.instance_path)
+        print("Database URI  :", app.config["SQLALCHEMY_DATABASE_URI"])
+        print("Engine URL    :", db.engine.url)
+        print("=" * 60)
+
+        try:
+            conn = db.engine.connect()
+            print("Database connection successful!")
+            conn.close()
+        except Exception as e:
+            print("Database connection failed!")
+            print(type(e).__name__)
+            print(e)
+            raise
+
         db.create_all()
+        print("Tables created successfully!")
+
         _seed_admin()
+        print("Admin seeded successfully!")
 
     return app
 
 
 def _seed_admin():
-    """Create a default Admin account on first run so there's always a way in."""
     from app.models import User, ROLE_ADMIN
 
     if User.query.filter_by(role=ROLE_ADMIN).first() is None:
-        admin = User(name="Admin", email="admin@assetflow.local", role=ROLE_ADMIN)
+        admin = User(
+            name="Admin",
+            email="admin@assetflow.local",
+            role=ROLE_ADMIN
+        )
         admin.set_password("admin123")
         db.session.add(admin)
         db.session.commit()
