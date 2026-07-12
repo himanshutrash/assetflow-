@@ -2,12 +2,14 @@
 {% block title %}Dashboard — AssetFlow{% endblock %}
 
 {% block content %}
-<div class="topbar">
+<section class="dashboard-hero">
   <div>
-    <h1>Dashboard</h1>
-    <div class="subtitle">Operational snapshot for {{ today.strftime('%d %b %Y') }}</div>
+    <p class="hero-kicker">ASSETFLOW COMMAND CENTER</p>
+    <h1>Good to see you, {{ current_user.name.split(' ')[0] }}.</h1>
+    <p>Here is your live operational snapshot for {{ today.strftime('%d %B %Y') }}.</p>
   </div>
-</div>
+  <div class="hero-orb" aria-hidden="true"><span>AF</span><small>LIVE</small></div>
+</section>
 
 <div class="kpi-grid">
   <div class="kpi-card">
@@ -36,8 +38,9 @@
   </div>
 </div>
 
-<div class="card">
+<div class="card quick-action-card">
   <div class="card-header"><h3>Quick actions</h3></div>
+  <p class="subtitle">Start a common task in one click.</p>
   <div class="inline-form">
     {% if current_user.is_admin or current_user.is_asset_manager %}
     <a class="btn btn-primary" href="{{ url_for('operations.assets') }}">Register asset</a>
