@@ -19,6 +19,7 @@
         <button class="btn btn-primary btn-block" type="submit">Send one-time code</button>
       </form>
     {% else %}
+      {% if demo_code %}<div class="flash flash-info"><strong>Demo code: {{ demo_code }}</strong><br>Enter this 6-digit code below. It expires in 10 minutes.</div>{% endif %}
       <form method="post" class="form-stack"><input type="hidden" name="action" value="verify">
         <div class="field"><label for="code">6-digit code</label><input id="code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus autocomplete="one-time-code" placeholder="000000"></div>
         <button class="btn btn-primary btn-block" type="submit">Verify and sign in</button>
