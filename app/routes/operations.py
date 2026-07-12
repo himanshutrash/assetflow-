@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.models import (
     ActivityLog, Allocation, Asset, AssetCategory, AuditCycle, Booking, Department,
-    MaintenanceRequest, TransferRequest, User, ASSET_AVAILABLE,
+    MaintenanceRequest, TransferRequest, User, ASSET_ALLOCATED, ASSET_AVAILABLE,
 )
 
 operations_bp = Blueprint("operations", __name__)
@@ -65,18 +65,48 @@ def maintenance():
     return render_template("operations/maintenance.html", assets=assets, items=items)
 
 
-@operations_bp.route("/allocations")
+@operations_bp.route("/allocations", methods=["GET", "POST"])
 @login_required
 def allocations():
+    if request.method == "POST":
+        _manager_required()
+        asset = db.session.get(Asset, request.form.get("asset_id", type=int))
+        user_id = request.form.get("user_id", type=int)
+        if not asset or not user_id:
+            flash("Select an asset and employee.", "error")
+        elif asset.status != ASSET_AVAILABLE:
+            flash("This asset is not available for allocation.", "error")
+        else:
+            due = request.form.get("expected_return_date")
+            db.session.add(Allocation(asset_id=asset.id, employee_id=user_id, expected_return_date=datetime.strptime(due, "%Y-%m-%d").date() if due else None))
+            asset.status = ASSET_ALLOCATED
+            _record(f"Allocated {asset.tag}", "Allocation")
+            db.session.commit()
+            flash("Asset allocated.", "success")
+        return redirect(url_for("operations.allocations"))
+    return render_template("operations/allocations.html", allocations=Allocation.query.filter_by(status="Active").order_by(Allocation.allocated_date.desc()).all(), assets=Asset.query.filter_by(status=ASSET_AVAILABLE).order_by(Asset.name).all(), users=User.query.filter_by(status="Active").order_by(User.name).all())
     return render_template("operations/list.html", title="Allocations & Transfers", description="Track custody, expected returns, and transfer requests.",
                            headers=["Asset", "Held by", "Expected return", "Status"],
                            rows=[(a.asset.tag + " — " + a.asset.name, a.employee.name if a.employee else (a.department.name if a.department else "—"), a.expected_return_date.strftime("%d %b %Y") if a.expected_return_date else "—", a.status) for a in Allocation.query.order_by(Allocation.allocated_date.desc()).all()],
                            empty="No allocations yet. Register an asset, then allocate it from this module in the next workflow update.")
 
 
-@operations_bp.route("/bookings")
+@operations_bp.route("/bookings", methods=["GET", "POST"])
 @login_required
 def bookings():
+    if request.method == "POST":
+        asset_id = request.form.get("asset_id", type=int)
+        try:
+            start = datetime.fromisoformat(request.form.get("start_time", "")); end = datetime.fromisoformat(request.form.get("end_time", ""))
+        except ValueError:
+            flash("Enter a valid start and end time.", "error"); return redirect(url_for("operations.bookings"))
+        conflict = Booking.query.filter(Booking.asset_id == asset_id, Booking.status != "Cancelled", Booking.start_time < end, Booking.end_time > start).first()
+        if not asset_id or end <= start: flash("Choose a resource and a valid time range.", "error")
+        elif conflict: flash("This booking overlaps an existing reservation.", "error")
+        else:
+            db.session.add(Booking(asset_id=asset_id, booked_by=current_user.id, start_time=start, end_time=end)); _record("Created resource booking", "Booking"); db.session.commit(); flash("Booking confirmed.", "success")
+        return redirect(url_for("operations.bookings"))
+    return render_template("operations/bookings.html", bookings=Booking.query.order_by(Booking.start_time.desc()).all(), assets=Asset.query.filter_by(is_bookable=True).order_by(Asset.name).all())
     return render_template("operations/list.html", title="Resource Bookings", description="Shared asset reservations and booking activity.",
                            headers=["Resource", "Booked by", "Start", "Status"],
                            rows=[(b.asset.name, b.booker.name, b.start_time.strftime("%d %b %Y %H:%M"), b.status) for b in Booking.query.order_by(Booking.start_time.desc()).all()],

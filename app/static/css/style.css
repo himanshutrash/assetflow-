@@ -5,23 +5,23 @@
    in this UI echoes that hang-tag shape — a punched rectangle.
    ========================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Color */
-  --paper: #F6F5F1;
+  --paper: #F5F7FC;
   --surface: #FFFFFF;
-  --ink: #1A1F23;
-  --ink-soft: #5B6570;
-  --border: #DCDAD2;
-  --border-strong: #C3C0B5;
+  --ink: #182033;
+  --ink-soft: #6D7891;
+  --border: #E2E7F1;
+  --border-strong: #CDD5E4;
 
-  --teal: #24575C;
-  --teal-dark: #17393D;
-  --teal-tint: #E4EDEC;
+  --teal: #4E5DDB;
+  --teal-dark: #182449;
+  --teal-tint: #EEF0FF;
 
-  --amber: #E7A23B;
-  --amber-tint: #FBEDD7;
+  --amber: #FF8057;
+  --amber-tint: #FFF0EB;
 
   --success: #3F7A52;
   --success-tint: #E4EFE6;
@@ -33,9 +33,9 @@
   --info-tint: #E4EBF3;
 
   /* Type */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'IBM Plex Sans', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 
   /* Layout */
   --sidebar-w: 240px;
@@ -123,7 +123,7 @@ code, .mono { font-family: var(--font-mono); }
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: var(--teal-dark);
+  background: linear-gradient(180deg, #172247 0%, #24366F 100%);
   color: #F2F5F4;
   display: flex;
   flex-direction: column;
@@ -187,7 +187,7 @@ code, .mono { font-family: var(--font-mono); }
 }
 
 .nav-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-link.active { background: var(--amber); color: var(--teal-dark); font-weight: 600; }
+.nav-link.active { background: #fff; color: var(--teal); font-weight: 700; box-shadow: 0 7px 18px rgba(4,13,42,.18); }
 
 .sidebar-footer {
   margin-top: auto;
@@ -276,7 +276,7 @@ code, .mono { font-family: var(--font-mono); }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 10px 30px rgba(32,52,101,.06);
   padding: 18px 20px;
   margin-bottom: 20px;
 }
@@ -352,6 +352,7 @@ tr:last-child td { border-bottom: none; }
 }
 .btn:hover { filter: brightness(0.94); }
 .btn-primary { background: var(--teal); color: #fff; }
+.eyebrow { margin: 0 0 7px; color: var(--teal); font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border-strong); }
 .btn-block { width: 100%; }
 .inline-form { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; max-width: none; }
