@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — AssetFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span class="brand-name" style="color:var(--ink);">AssetFlow</span>
+      </div>
+      <h2>Sign in</h2>
+      <p class="subtitle">Track, allocate, and audit your organization's assets.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" class="form-stack">
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required autofocus placeholder="you@company.com">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      </form>
+
+      <p class="auth-footer">No account yet? <a href="{{ url_for('auth.signup') }}">Create one</a></p>
+    </div>
+  </div>
+</body>
+</html>

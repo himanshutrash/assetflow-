@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AssetFlow{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <h1>Dashboard</h1>
+    <div class="subtitle">Operational snapshot for {{ today.strftime('%d %b %Y') }}</div>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--success);">{{ kpis.available }}</div>
+    <div class="kpi-label">Assets available</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--teal);">{{ kpis.allocated }}</div>
+    <div class="kpi-label">Assets allocated</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--amber);">{{ kpis.maintenance_today }}</div>
+    <div class="kpi-label">Maintenance in progress</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value" style="color:var(--info);">{{ kpis.active_bookings }}</div>
+    <div class="kpi-label">Active bookings</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ kpis.pending_transfers }}</div>
+    <div class="kpi-label">Pending transfers</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Overdue returns</h3>
+    <span class="tag-chip status-Lost">{{ overdue|length }} overdue</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Asset</th><th>Held by</th><th>Expected return</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for a in overdue %}
+      <tr class="overdue-row">
+        <td><span class="tag-chip status-Allocated">{{ a.asset.tag }}</span> {{ a.asset.name }}</td>
+        <td>{{ a.employee.name if a.employee else (a.department.name if a.department else '—') }}</td>
+        <td>{{ a.expected_return_date.strftime('%d %b %Y') }}</td>
+        <td><span class="tag-chip status-Lost">Overdue</span></td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="4">No overdue returns right now.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Upcoming returns</h3>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Asset</th><th>Held by</th><th>Expected return</th></tr>
+    </thead>
+    <tbody>
+      {% for a in upcoming %}
+      <tr>
+        <td><span class="tag-chip status-Allocated">{{ a.asset.tag }}</span> {{ a.asset.name }}</td>
+        <td>{{ a.employee.name if a.employee else (a.department.name if a.department else '—') }}</td>
+        <td>{{ a.expected_return_date.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="3">Nothing due back soon.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

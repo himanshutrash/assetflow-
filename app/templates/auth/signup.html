@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account — AssetFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span class="brand-name" style="color:var(--ink);">AssetFlow</span>
+      </div>
+      <h2>Create your account</h2>
+      <p class="subtitle">You'll join as an Employee. Your Admin can grant broader access later.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" class="form-stack">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" required autofocus placeholder="Jordan Lee">
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="you@company.com">
+        </div>
+        <div class="field">
+          <label for="department_id">Department</label>
+          <select id="department_id" name="department_id">
+            <option value="">Not assigned yet</option>
+            {% for dept in departments %}
+              <option value="{{ dept.id }}">{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="••••••••">
+          <div class="hint">At least 8 characters.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <p class="auth-footer">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </div>
+  </div>
+</body>
+</html>

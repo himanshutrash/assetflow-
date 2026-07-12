@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AssetFlow{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span class="brand-name">AssetFlow</span>
+      </div>
+
+      <nav>
+        <div class="nav-group-label">Operate</div>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.home' }}" href="{{ url_for('dashboard.home') }}">Dashboard</a>
+        <a class="nav-link" href="#">Assets</a>
+        <a class="nav-link" href="#">Allocations &amp; Transfers</a>
+        <a class="nav-link" href="#">Resource Bookings</a>
+        <a class="nav-link" href="#">Maintenance</a>
+
+        <div class="nav-group-label">Govern</div>
+        <a class="nav-link" href="#">Audit Cycles</a>
+        <a class="nav-link" href="#">Reports</a>
+        <a class="nav-link" href="#">Activity Log</a>
+
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="nav-group-label">Admin</div>
+        <a class="nav-link" href="#">Organization Setup</a>
+        {% endif %}
+      </nav>
+
+      {% if current_user.is_authenticated %}
+      <div class="sidebar-footer">
+        {{ current_user.name }}
+        <div><span class="role-pill">{{ current_user.role }}</span></div>
+        <a class="nav-link" style="padding-left:0; margin-top:8px;" href="{{ url_for('auth.logout') }}">Sign out</a>
+      </div>
+      {% endif %}
+    </aside>
+
+    <main class="main">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>
