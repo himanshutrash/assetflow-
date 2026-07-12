@@ -138,7 +138,7 @@ def otp_signup():
                 session.pop("signup_otp_data", None)
                 flash("OTP delivery is not configured. Set OTP_DEMO_MODE=true for a demo or connect an email/SMS provider.", "error")
                 return render_template("auth/otp_signup.html", departments=departments, saved=request.form)
-            return render_template("auth/otp_signup.html", departments=departments, saved=session["signup_otp_data"], code_sent=True)
+            return render_template("auth/otp_signup.html", departments=departments, saved=session["signup_otp_data"], code_sent=True, demo_code=code)
 
         if action == "verify":
             saved = session.get("signup_otp_data")
@@ -216,7 +216,7 @@ def otp_login():
                 session.pop("otp_identity", None)
                 flash("OTP delivery is not configured. Set OTP_DEMO_MODE=true for a demo or connect an email/SMS provider.", "error")
                 return render_template("auth/otp_login.html", identity=identity)
-            return render_template("auth/otp_login.html", identity=identity, code_sent=True)
+            return render_template("auth/otp_login.html", identity=identity, code_sent=True, demo_code=code)
 
         if action == "verify":
             user_id = session.get("otp_user_id")
