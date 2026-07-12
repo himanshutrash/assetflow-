@@ -44,6 +44,35 @@ def assets():
     return render_template("operations/assets.html", assets=Asset.query.order_by(Asset.id.desc()).all(), categories=categories)
 
 
+@operations_bp.route("/assets/<int:asset_id>/update", methods=["POST"])
+@login_required
+def update_asset(asset_id):
+    _manager_required()
+    asset = db.get_or_404(Asset, asset_id)
+    asset.name = request.form.get("name", asset.name).strip() or asset.name
+    asset.location = request.form.get("location", "").strip() or None
+    status = request.form.get("status")
+    if status in ("Available", "UnderMaintenance", "Lost", "Retired", "Disposed"):
+        asset.status = status
+    asset.is_bookable = bool(request.form.get("is_bookable"))
+    _record(f"Updated {asset.tag}", "Asset")
+    db.session.commit()
+    flash("Asset updated.", "success")
+    return redirect(url_for("operations.assets"))
+
+
+@operations_bp.route("/assets/<int:asset_id>/delete", methods=["POST"])
+@login_required
+def delete_asset(asset_id):
+    _manager_required()
+    asset = db.get_or_404(Asset, asset_id)
+    if Allocation.query.filter_by(asset_id=asset.id, status="Active").first() or Booking.query.filter_by(asset_id=asset.id, status="Upcoming").first():
+        flash("This asset has active records and cannot be deleted.", "error")
+    else:
+        db.session.delete(asset); _record(f"Deleted {asset.tag}", "Asset"); db.session.commit(); flash("Asset deleted.", "success")
+    return redirect(url_for("operations.assets"))
+
+
 @operations_bp.route("/maintenance", methods=["GET", "POST"])
 @login_required
 def maintenance():
@@ -63,6 +92,26 @@ def maintenance():
             return redirect(url_for("operations.maintenance"))
     items = MaintenanceRequest.query.order_by(MaintenanceRequest.created_at.desc()).all()
     return render_template("operations/maintenance.html", assets=assets, items=items)
+
+
+@operations_bp.route("/maintenance/<int:request_id>/status", methods=["POST"])
+@login_required
+def maintenance_status(request_id):
+    _manager_required()
+    item = db.get_or_404(MaintenanceRequest, request_id)
+    status = request.form.get("status")
+    allowed = {"Approved", "Rejected", "TechnicianAssigned", "InProgress", "Resolved"}
+    if status not in allowed:
+        abort(400)
+    item.status = status
+    if status in {"Approved", "TechnicianAssigned", "InProgress"}:
+        item.asset.status = "UnderMaintenance"
+    elif status == "Resolved":
+        item.asset.status = "Available"; item.resolved_at = datetime.utcnow()
+    item.technician_name = request.form.get("technician_name", "").strip() or item.technician_name
+    _record(f"Set maintenance request to {status}", "MaintenanceRequest")
+    db.session.commit(); flash("Maintenance request updated.", "success")
+    return redirect(url_for("operations.maintenance"))
 
 
 @operations_bp.route("/allocations", methods=["GET", "POST"])
@@ -91,6 +140,19 @@ def allocations():
                            empty="No allocations yet. Register an asset, then allocate it from this module in the next workflow update.")
 
 
+@operations_bp.route("/allocations/<int:allocation_id>/return", methods=["POST"])
+@login_required
+def return_asset(allocation_id):
+    _manager_required()
+    allocation = db.get_or_404(Allocation, allocation_id)
+    allocation.status = "Returned"; allocation.actual_return_date = datetime.utcnow()
+    allocation.condition_notes = request.form.get("condition_notes", "").strip() or None
+    allocation.asset.status = ASSET_AVAILABLE
+    _record(f"Returned {allocation.asset.tag}", "Allocation")
+    db.session.commit(); flash("Asset returned and marked Available.", "success")
+    return redirect(url_for("operations.allocations"))
+
+
 @operations_bp.route("/bookings", methods=["GET", "POST"])
 @login_required
 def bookings():
@@ -111,6 +173,17 @@ def bookings():
                            headers=["Resource", "Booked by", "Start", "Status"],
                            rows=[(b.asset.name, b.booker.name, b.start_time.strftime("%d %b %Y %H:%M"), b.status) for b in Booking.query.order_by(Booking.start_time.desc()).all()],
                            empty="No bookings yet. Mark an asset as bookable when registering it.")
+
+
+@operations_bp.route("/bookings/<int:booking_id>/cancel", methods=["POST"])
+@login_required
+def cancel_booking(booking_id):
+    booking = db.get_or_404(Booking, booking_id)
+    if booking.booked_by != current_user.id and not (current_user.is_admin or current_user.is_asset_manager):
+        abort(403)
+    booking.status = "Cancelled"; _record("Cancelled resource booking", "Booking")
+    db.session.commit(); flash("Booking cancelled.", "success")
+    return redirect(url_for("operations.bookings"))
 
 
 @operations_bp.route("/audits")
