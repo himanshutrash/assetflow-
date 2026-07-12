@@ -20,11 +20,6 @@
         {% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
       {% endwith %}
 
-      <a class="google-button" href="{{ url_for('auth.google_login') }}" aria-label="Continue with Google">
-        <span class="google-g" aria-hidden="true">G</span><span>Continue with Google</span>
-      </a>
-      <div class="auth-divider"><span>or</span></div>
-
       <form method="post" class="form-stack">
         <div class="field">
           <label for="email">Work email</label>
